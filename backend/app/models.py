@@ -20,6 +20,7 @@ class User(Base):
 class PriceOptimization(Base):
     __tablename__ = 'price_optimizations'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False, unique=True)
+    optimization_name = Column(String, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     cost_function = Column(Text, nullable=False)
     demand_function = Column(Text, nullable=False)
