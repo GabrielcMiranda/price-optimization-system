@@ -54,3 +54,11 @@ class OptimizationInfo(BaseModel):
     optimal_price: float
     max_profit: float
     profit_function: Optional[str] = None
+
+class OptimizationResponse(BaseModel):
+    optimization_name: str
+    optimal_price: float
+    cost_function: str
+    demand_function: str
+    max_profit: float
+    graph_image_url: Optional[str] = None

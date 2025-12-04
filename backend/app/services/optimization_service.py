@@ -1,6 +1,6 @@
 from uuid import UUID
 import asyncio
-from app.schemas import OptimizationRequest, OptimizationInfo
+from app.schemas import OptimizationRequest, OptimizationInfo, OptimizationResponse
 from app.core.database.connection import async_session
 from sqlalchemy.future import select
 from app.models import PriceOptimization, User
@@ -58,3 +58,33 @@ class OptimizationService:
             await session.refresh(new_optimization)
             
             return optimization
+        
+    @staticmethod
+    async def get_optimization(user_id: UUID, optimization_name:str) -> OptimizationResponse:
+        async with async_session() as session:
+            result = await session.execute(select(User).where(User.id == user_id))         
+
+            user = result.scalar_one_or_none()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            optimization_result = await session.execute(
+                select(PriceOptimization).where(
+                    PriceOptimization.optimization_name == optimization_name,
+                    PriceOptimization.user_id == user_id
+                ))
+            
+            optimization = optimization_result.scalar_one_or_none()
+            
+            if not optimization:
+                raise HTTPException(status_code=404, detail="Optimization not found")
+
+            return OptimizationResponse(
+                optimization_name=optimization.optimization_name,
+                optimal_price=optimization.optimal_price,
+                cost_function=optimization.cost_function,
+                demand_function=optimization.demand_function,
+                max_profit=optimization.max_profit,
+                graph_image_url=optimization.graph_image_url
+            )
