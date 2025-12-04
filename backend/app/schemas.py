@@ -62,3 +62,7 @@ class OptimizationResponse(BaseModel):
     demand_function: str
     max_profit: float
     graph_image_url: Optional[str] = None
+
+class StandartOutput(BaseModel):
+    status_code:int
+    detail:str

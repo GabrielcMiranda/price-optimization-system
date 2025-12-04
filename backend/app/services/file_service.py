@@ -12,14 +12,12 @@ cloudinary.config(
 
 class FileService:
     @staticmethod
-    async def upload_graph_image(image_buffer:BytesIO, user_id: str, optimization_name: str) -> str:
-       
-        safe_name = optimization_name.replace(' ', '_').replace('/', '_')
-        
+    async def upload_graph_image(image_buffer: BytesIO, user_id: str, optimization_id: str) -> str:
+
         result = upload(
             image_buffer,
             folder=f'optimization_graphs/{user_id}',
-            public_id=safe_name,
+            public_id=optimization_id,  
             overwrite=True,
             resource_type="image",
             format="png"
