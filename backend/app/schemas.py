@@ -1,4 +1,4 @@
-from io import BytesIO
+
 from pydantic import BaseModel, field_validator
 from typing import Optional
 import re
@@ -21,6 +21,7 @@ class RegisterRequest(BaseModel):
 
 
 class OptimizationRequest(BaseModel):
+    optimization_name: str
     cost_function: str
     demand_function: str
     
@@ -53,10 +54,3 @@ class OptimizationInfo(BaseModel):
     optimal_price: float
     max_profit: float
     profit_function: Optional[str] = None
-    derivative: Optional[str] = None
-
-class FileUploadRequest(BaseModel):
-    image_buffer: BytesIO
-    user_id: str
-    optimization_name: str
-    

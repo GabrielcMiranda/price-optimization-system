@@ -1,7 +1,8 @@
-from typing import Dict, Tuple
 from io import BytesIO
 import sympy as sp
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 from sympy.parsing.sympy_parser import parse_expr
 from app.schemas import OptimizationRequest, OptimizationInfo
@@ -9,19 +10,18 @@ from app.schemas import OptimizationRequest, OptimizationInfo
 
 class OptimizationCalc:
     
-    def __init__(self):
-        self.x = sp.Symbol('x')
-    
-    def calculate_optimal_price(self, dto: OptimizationRequest) -> OptimizationInfo:
+    @staticmethod
+    def calculate_optimal_price(dto: OptimizationRequest) -> OptimizationInfo:
       
+        x = sp.Symbol('x')
         try:
-            cost = parse_expr(dto.cost_function, local_dict={'x': self.x})
-            demand = parse_expr(dto.demand_function, local_dict={'x': self.x})
+            cost = parse_expr(dto.cost_function, local_dict={'x': x})
+            demand = parse_expr(dto.demand_function, local_dict={'x': x})
             
-            revenue = self.x * demand
+            revenue = x * demand
             profit = revenue - cost
-            profit_derivative = sp.diff(profit, self.x)
-            critical_points = sp.solve(profit_derivative, self.x)
+            profit_derivative = sp.diff(profit, x)
+            critical_points = sp.solve(profit_derivative, x)
             
             valid_points = [
                 float(point) for point in critical_points 
@@ -31,48 +31,47 @@ class OptimizationCalc:
             if not valid_points:
                 raise ValueError("Nenhum ponto crítico válido encontrado")
             
-            second_derivative = sp.diff(profit_derivative, self.x)
+            second_derivative = sp.diff(profit_derivative, x)
             
             optimal_price = None
             max_profit_value = float('-inf')
             
             for point in valid_points:
-                second_deriv_value = float(second_derivative.subs(self.x, point))
+                second_deriv_value = float(second_derivative.subs(x, point))
                 if second_deriv_value < 0:
-                    profit_value = float(profit.subs(self.x, point))
+                    profit_value = float(profit.subs(x, point))
                     if profit_value > max_profit_value:
                         max_profit_value = profit_value
                         optimal_price = point
             
             if optimal_price is None:
-                optimal_price = max(valid_points, key=lambda p: float(profit.subs(self.x, p)))
-                max_profit_value = float(profit.subs(self.x, optimal_price))
+                optimal_price = max(valid_points, key=lambda p: float(profit.subs(x, p)))
+                max_profit_value = float(profit.subs(x, optimal_price))
             
             return OptimizationInfo(
                 optimal_price=optimal_price,
                 max_profit=max_profit_value,
                 profit_function=str(profit),
-                derivative=str(profit_derivative)
             )
         
         except Exception as e:
             raise ValueError(f"Erro ao calcular otimização: {str(e)}")
     
-    def generate_graph_image(self, dto: OptimizationInfo) -> BytesIO:
-       
+    @staticmethod
+    def generate_graph_image(dto: OptimizationRequest, optimization: OptimizationInfo) -> BytesIO:
+        
+        x = sp.Symbol('x')
         try:
-    
-            cost = parse_expr(dto.cost_function, local_dict={'x': self.x})
-            demand = parse_expr(dto.demand_function, local_dict={'x': self.x})
-            revenue = self.x * demand
+            cost = parse_expr(dto.cost_function, local_dict={'x': x})
+            demand = parse_expr(dto.demand_function, local_dict={'x': x})
+            revenue = x * demand
             profit = revenue - cost
             
-            cost_func = sp.lambdify(self.x, cost, 'numpy')
-            demand_func = sp.lambdify(self.x, demand, 'numpy')
-            revenue_func = sp.lambdify(self.x, revenue, 'numpy')
-            profit_func = sp.lambdify(self.x, profit, 'numpy')
+            cost_func = sp.lambdify(x, cost, 'numpy')
+            revenue_func = sp.lambdify(x, revenue, 'numpy')
+            profit_func = sp.lambdify(x, profit, 'numpy')
             
-            x_range = np.linspace(0, dto.optimal_price * 2, 1000)
+            x_range = np.linspace(0, optimization.optimal_price * 2, 1000)
             
             cost_values = cost_func(x_range)
             revenue_values = revenue_func(x_range)
@@ -84,12 +83,12 @@ class OptimizationCalc:
             plt.plot(x_range, revenue_values, label='Receita', color='green', linewidth=2)
             plt.plot(x_range, profit_values, label='Lucro', color='blue', linewidth=2)
             
-            plt.scatter([dto.optimal_price], [dto.max_profit], color='gold', s=200, zorder=5, 
-                       label=f'Ponto Ótimo ({dto.optimal_price:.2f}, {dto.max_profit:.2f})',
+            plt.scatter([optimization.optimal_price], [optimization.max_profit], color='gold', s=200, zorder=5, 
+                       label=f'Ponto Ótimo ({optimization.optimal_price:.2f}, {optimization.max_profit:.2f})',
                        edgecolors='black', linewidth=2)
             
-            plt.axvline(x=dto.optimal_price, color='gray', linestyle='--', alpha=0.7)
-            plt.axhline(y=dto.max_profit, color='gray', linestyle='--', alpha=0.7)
+            plt.axvline(x=optimization.optimal_price, color='gray', linestyle='--', alpha=0.7)
+            plt.axhline(y=optimization.max_profit, color='gray', linestyle='--', alpha=0.7)
             
             plt.xlabel('Preço (x)', fontsize=12, fontweight='bold')
             plt.ylabel('Valor ($)', fontsize=12, fontweight='bold')
@@ -110,11 +109,13 @@ class OptimizationCalc:
             plt.close()
             raise ValueError(f"Erro ao gerar gráfico: {str(e)}")
     
-    def validate_functions(self, cost_function: str, demand_function: str) -> bool:
-     
+    @staticmethod
+    def validate_functions(cost_function: str, demand_function: str) -> bool:
+    
+        x = sp.Symbol('x')
         try:
-            parse_expr(cost_function, local_dict={'x': self.x})
-            parse_expr(demand_function, local_dict={'x': self.x})
+            parse_expr(cost_function, local_dict={'x': x})
+            parse_expr(demand_function, local_dict={'x': x})
             return True
         except Exception:
             return False

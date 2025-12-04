@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from app.routers.auth_router import auth_router
 import uvicorn
+from app.routers.optimization_router import optimization_router
 
 app = FastAPI()
 
 app.include_router(auth_router)
-
+app.include_router(optimization_router)
 @app.get('/')
 def home():
     return {'message': 'Backend está funcionando!', 'status': 'ok', 'app': 'price-optimization-system'}

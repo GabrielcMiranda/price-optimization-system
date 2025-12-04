@@ -1,7 +1,7 @@
+from io import BytesIO
 from app.core.settings import Settings
 import cloudinary
 from cloudinary.uploader import upload
-from app.schemas import FileUploadRequest
 
 cloudinary.config(
     cloud_name=Settings.CLOUDINARY_CLOUD_NAME,      
@@ -12,13 +12,13 @@ cloudinary.config(
 
 class FileService:
     @staticmethod
-    async def upload_graph_image(dto:FileUploadRequest):
+    async def upload_graph_image(image_buffer:BytesIO, user_id: str, optimization_name: str) -> str:
        
-        safe_name = dto.optimization_name.replace(' ', '_').replace('/', '_')
+        safe_name = optimization_name.replace(' ', '_').replace('/', '_')
         
         result = upload(
-            dto.image_buffer,
-            folder=f'optimization_graphs/{dto.user_id}',
+            image_buffer,
+            folder=f'optimization_graphs/{user_id}',
             public_id=safe_name,
             overwrite=True,
             resource_type="image",
