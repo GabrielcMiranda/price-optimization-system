@@ -1,6 +1,7 @@
+from typing import List
 from uuid import UUID
 import asyncio
-from app.schemas import OptimizationRequest, OptimizationResponse, StandartOutput
+from app.schemas import OptimizationInfo, OptimizationRequest, OptimizationResponse, StandartOutput
 from app.core.database.connection import async_session
 from sqlalchemy.future import select
 from app.models import PriceOptimization, User
@@ -153,3 +154,28 @@ class OptimizationService:
                 status_code=200,
                 detail="Optimization updated successfully"
             )
+        
+    @staticmethod
+    async def list_optimizations(user_id: UUID) -> List[OptimizationRequest]:
+        async with async_session() as session:
+            result = await session.execute(select(User).where(User.id == user_id))
+            user = result.scalar_one_or_none()
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            optimizations_result = await session.execute(
+                select(PriceOptimization).where(PriceOptimization.user_id == user_id)
+            )
+            
+            optimizations = optimizations_result.scalars().all()
+            
+            optimization_list = [
+                OptimizationRequest(
+                    optimization_name=opt.optimization_name,
+                    cost_function=opt.cost_function,
+                    demand_function=opt.demand_function
+                ) for opt in optimizations
+            ]
+            
+            return optimization_list

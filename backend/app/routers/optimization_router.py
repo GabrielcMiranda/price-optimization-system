@@ -51,3 +51,14 @@ async def update_optimization(optimization_name: str, dto: OptimizationRequest, 
     except Exception as error:
         logging.error("Error in update_optimization: %s", error)
         raise HTTPException(status_code=500, detail='Something went wrong. Please try again later.')
+    
+@optimization_router.get('/', response_model=list[OptimizationRequest])
+async def list_optimizations(user_id: UUID = Depends(AuthService.validate_user_auth)):
+    try:
+        optimizations = await OptimizationService.list_optimizations(user_id)
+        return optimizations
+    except HTTPException as error:
+        raise error
+    except Exception as error:
+        logging.error("Error in list_optimizations: %s", error)
+        raise HTTPException(status_code=500, detail='Something went wrong. Please try again later.')
