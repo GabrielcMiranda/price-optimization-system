@@ -30,17 +30,6 @@ async def get_optimization(optimization_name: str, user_id: UUID = Depends(AuthS
         logging.error("Error in get_optimization: %s", error)
         raise HTTPException(status_code=500, detail='Something went wrong. Please try again later.')
     
-@optimization_router.get('/{optimization_name}', response_model=OptimizationResponse)
-async def get_optimization(optimization_name: str, user_id: UUID = Depends(AuthService.validate_user_auth)):
-    try:
-        optimization = await OptimizationService.get_optimization(user_id, optimization_name)
-        return optimization
-    except HTTPException as error:
-        raise error
-    except Exception as error:
-        logging.error("Error in get_optimization: %s", error)
-        raise HTTPException(status_code=500, detail='Something went wrong. Please try again later.')
-    
 @optimization_router.put('/{optimization_name}', response_model=StandartOutput, status_code=201)
 async def update_optimization(optimization_name: str, dto: OptimizationRequest, user_id: UUID = Depends(AuthService.validate_user_auth)):
     try:
