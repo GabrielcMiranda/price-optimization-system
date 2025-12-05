@@ -25,24 +25,47 @@ class OptimizationRequest(BaseModel):
     cost_function: str
     demand_function: str
     
-    @field_validator('cost_function', 'demand_function')
+    @field_validator('cost_function')
     @classmethod
-    def validate_function_format(cls, v: str) -> str:
-        
+    def validate_cost_function(cls, v: str) -> str:
         v_clean = v.replace(' ', '')
         
         if not v_clean:
             raise ValueError("A função não pode estar vazia")
         
-        if 'x' not in v_clean.lower():
-            raise ValueError("A função deve conter a variável 'x'")
+        if 'q' not in v_clean.lower():
+            raise ValueError("A função de custo deve conter a variável 'q'")
         
-        #números, x, operadores matemáticos básicos, parênteses
-        pattern = r'^[0-9x\+\-\*/\(\)\.\s\*\*]+$'
+        # números, q, operadores matemáticos básicos, parênteses
+        pattern = r'^[0-9q\+\-\*/\(\)\.\s\*\*]+$'
         if not re.match(pattern, v_clean, re.IGNORECASE):
             raise ValueError(
                 "A função contém caracteres inválidos. "
-                "Use apenas números, 'x', +, -, *, /, ** e parênteses"
+                "Use apenas números, 'q', +, -, *, /, ** e parênteses"
+            )
+        
+        if v_clean.count('(') != v_clean.count(')'):
+            raise ValueError("Parênteses desbalanceados na função")
+        
+        return v
+    
+    @field_validator('demand_function')
+    @classmethod
+    def validate_demand_function(cls, v: str) -> str:
+        v_clean = v.replace(' ', '')
+        
+        if not v_clean:
+            raise ValueError("A função não pode estar vazia")
+        
+        if 'p' not in v_clean.lower():
+            raise ValueError("A função de demanda deve conter a variável 'p'")
+        
+        # números, p, operadores matemáticos básicos, parênteses
+        pattern = r'^[0-9p\+\-\*/\(\)\.\s\*\*]+$'
+        if not re.match(pattern, v_clean, re.IGNORECASE):
+            raise ValueError(
+                "A função contém caracteres inválidos. "
+                "Use apenas números, 'p', +, -, *, /, ** e parênteses"
             )
         
         if v_clean.count('(') != v_clean.count(')'):

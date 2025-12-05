@@ -13,25 +13,25 @@ class OptimizationCalc:
     @staticmethod
     def calculate_optimal_price(dto: OptimizationRequest) -> OptimizationInfo:
        
-        x = sp.Symbol('x')
-        q = sp.Symbol('q') 
+        p = sp.Symbol('p')  # preço
+        q = sp.Symbol('q')  # quantidade
         
         try:
            
-            cost_expr = parse_expr(dto.cost_function, local_dict={'x': q})  # C(q)
-            demand = parse_expr(dto.demand_function, local_dict={'x': x})   # Q(p)
+            cost_expr = parse_expr(dto.cost_function, local_dict={'q': q})  # C(q)
+            demand = parse_expr(dto.demand_function, local_dict={'p': p})   # Q(p)
             
             # C(Q(p))
             cost = cost_expr.subs(q, demand)
             
             # Receita: R(p) = p · Q(p)
-            revenue = x * demand
+            revenue = p * demand
             
             # Lucro: L(p) = R(p) - C(Q(p))
             profit = revenue - cost
             
-            profit_derivative = sp.diff(profit, x)
-            critical_points = sp.solve(profit_derivative, x)
+            profit_derivative = sp.diff(profit, p)
+            critical_points = sp.solve(profit_derivative, p)
             
             valid_points = [
                 float(point) for point in critical_points 
@@ -41,22 +41,22 @@ class OptimizationCalc:
             if not valid_points:
                 raise ValueError("Nenhum ponto crítico válido encontrado")
             
-            second_derivative = sp.diff(profit_derivative, x)
+            second_derivative = sp.diff(profit_derivative, p)
             
             optimal_price = None
             max_profit_value = float('-inf')
             
             for point in valid_points:
-                second_deriv_value = float(second_derivative.subs(x, point))
+                second_deriv_value = float(second_derivative.subs(p, point))
                 if second_deriv_value < 0:
-                    profit_value = float(profit.subs(x, point))
+                    profit_value = float(profit.subs(p, point))
                     if profit_value > max_profit_value:
                         max_profit_value = profit_value
                         optimal_price = point
             
             if optimal_price is None:
-                optimal_price = max(valid_points, key=lambda p: float(profit.subs(x, p)))
-                max_profit_value = float(profit.subs(x, optimal_price))
+                optimal_price = max(valid_points, key=lambda price: float(profit.subs(p, price)))
+                max_profit_value = float(profit.subs(p, optimal_price))
             
             return OptimizationInfo(
                 optimal_price=optimal_price,
@@ -70,16 +70,22 @@ class OptimizationCalc:
     @staticmethod
     def generate_graph_image(dto: OptimizationRequest, optimization: OptimizationInfo) -> BytesIO:
         
-        x = sp.Symbol('x')
+        p = sp.Symbol('p')  # preço
+        q = sp.Symbol('q')  # quantidade
         try:
-            cost = parse_expr(dto.cost_function, local_dict={'x': x})
-            demand = parse_expr(dto.demand_function, local_dict={'x': x})
-            revenue = x * demand
+            cost_expr = parse_expr(dto.cost_function, local_dict={'q': q})  # C(q)
+            demand = parse_expr(dto.demand_function, local_dict={'p': p})   # Q(p)
+            
+            # C(Q(p))
+            cost = cost_expr.subs(q, demand)
+            
+            # Receita e lucro
+            revenue = p * demand
             profit = revenue - cost
             
-            cost_func = sp.lambdify(x, cost, 'numpy')
-            revenue_func = sp.lambdify(x, revenue, 'numpy')
-            profit_func = sp.lambdify(x, profit, 'numpy')
+            cost_func = sp.lambdify(p, cost, 'numpy')
+            revenue_func = sp.lambdify(p, revenue, 'numpy')
+            profit_func = sp.lambdify(p, profit, 'numpy')
             
             x_range = np.linspace(0, optimization.optimal_price * 2, 1000)
             

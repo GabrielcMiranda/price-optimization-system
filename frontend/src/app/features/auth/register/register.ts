@@ -6,12 +6,11 @@ import { firstValueFrom } from 'rxjs';
 import { Button } from '../../../shared/components/button/button';
 import { InputComponent } from '../../../shared/components/input/input';
 import { Card } from '../../../shared/components/card/card';
-import { LoadingSpinner } from '../../../shared/components/loading-spinner/loading-spinner';
 import { AuthService } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-register',
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, Button, InputComponent, Card, LoadingSpinner],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, Button, InputComponent, Card],
   templateUrl: './register.html',
   styleUrl: './register.scss',
 })

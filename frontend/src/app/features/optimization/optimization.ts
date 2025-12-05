@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -30,7 +30,8 @@ export class Optimization implements OnInit {
     private fb: FormBuilder,
     private optimizationService: OptimizationService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -43,21 +44,21 @@ export class Optimization implements OnInit {
     this.loadOptimizations();
   }
 
-  loadOptimizations(): void {
+  async loadOptimizations(): Promise<void> {
     this.isLoadingList = true;
-    this.optimizationService.listOptimizations().subscribe({
-      next: (data) => {
-        this.optimizations = data;
-        this.isLoadingList = false;
-      },
-      error: (error) => {
-        console.error('Erro ao carregar otimizações:', error);
-        this.isLoadingList = false;
-      }
-    });
+    try {
+      const data = await firstValueFrom(this.optimizationService.listOptimizations());
+      this.optimizations = data;
+      this.isLoadingList = false;
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Erro ao carregar otimizações:', error);
+      this.isLoadingList = false;
+      this.cdr.detectChanges();
+    }
   }
 
-  onOptimizationSelect(event: Event): void {
+  async onOptimizationSelect(event: Event): Promise<void> {
     const select = event.target as HTMLSelectElement;
     const value = select.value;
 
@@ -65,27 +66,30 @@ export class Optimization implements OnInit {
       this.selectedOptimizationName = null;
       this.currentResult = null;
       this.optimizationForm.reset();
+      this.cdr.detectChanges();
     } else {
       this.selectedOptimizationName = value;
       
-      // Buscar detalhes completos da otimização selecionada
-      this.optimizationService.getOptimization(value).subscribe({
-        next: (result) => {
-          this.optimizationForm.patchValue({
-            productName: result.optimization_name,
-            costFunction: result.cost_function,
-            demandFunction: result.demand_function
-          });
-          this.currentResult = result;
-        },
-        error: (error) => {
-          console.error('Erro ao carregar otimização:', error);
-        }
-      });
+      try {
+        // Buscar detalhes completos da otimização selecionada
+        const result = await firstValueFrom(this.optimizationService.getOptimization(value));
+        
+        this.optimizationForm.patchValue({
+          productName: result.optimization_name,
+          costFunction: result.cost_function,
+          demandFunction: result.demand_function
+        });
+        
+        this.currentResult = result;
+        this.cdr.detectChanges();
+        console.log('Produto carregado:', result.optimization_name);
+      } catch (error) {
+        console.error('Erro ao carregar otimização:', error);
+      }
     }
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     if (this.optimizationForm.invalid) {
       this.optimizationForm.markAllAsTouched();
       return;
@@ -100,30 +104,62 @@ export class Optimization implements OnInit {
       demand_function: this.optimizationForm.value.demandFunction
     };
 
-    const request$ = this.selectedOptimizationName
-      ? this.optimizationService.updateOptimization(this.selectedOptimizationName, formData)
-      : this.optimizationService.makeOptimization(formData);
-
-    request$.subscribe({
-      next: (result) => {
-        // Após criar/atualizar, buscar os detalhes completos
-        this.optimizationService.getOptimization(formData.optimization_name).subscribe({
-          next: (detailedResult) => {
-            this.currentResult = detailedResult;
-            this.isLoading = false;
-            this.loadOptimizations();
-          },
-          error: (error) => {
-            console.error('Erro ao buscar detalhes:', error);
-            this.isLoading = false;
-          }
-        });
-      },
-      error: (error) => {
+    try {
+      console.log('Processando otimização:', formData.optimization_name);
+      
+      const request$ = this.selectedOptimizationName
+        ? this.optimizationService.updateOptimization(this.selectedOptimizationName, formData)
+        : this.optimizationService.makeOptimization(formData);
+      
+      await firstValueFrom(request$);
+      
+      // Atualizar selectedOptimizationName se o nome mudou
+      this.selectedOptimizationName = formData.optimization_name;
+      
+      // Recarregar a lista primeiro para garantir que o novo/atualizado item existe
+      await this.loadOptimizations();
+      
+      // Aguardar um pouco para garantir que o backend processou tudo
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Após criar/atualizar, buscar os detalhes completos usando o novo nome
+      const detailedResult = await firstValueFrom(
+        this.optimizationService.getOptimization(formData.optimization_name)
+      );
+      
+      this.currentResult = detailedResult;
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      console.log('Otimização processada com sucesso');
+    } catch (error: any) {
+      console.error('Erro ao processar otimização:', error);
+      
+      // Tratar erro de validação do Pydantic (422)
+      if (error?.status === 422 && error?.error?.detail) {
+        const details = error.error.detail;
+        
+        if (Array.isArray(details)) {
+          // Extrair apenas as mensagens relevantes, removendo prefixos técnicos
+          const messages = details.map((err: any) => {
+            let msg = err.msg || '';
+            // Remover "Value error, " do início da mensagem se existir
+            msg = msg.replace(/^Value error,\s*/i, '');
+            return msg;
+          }).filter(msg => msg).join('\n');
+          
+          this.errorMessage = messages || 'Erro de validação nas funções';
+        } else if (typeof details === 'string') {
+          this.errorMessage = details;
+        } else {
+          this.errorMessage = 'Erro de validação. Verifique se as funções usam as variáveis corretas (q para custo, p para demanda).';
+        }
+      } else {
         this.errorMessage = error?.error?.detail || 'Erro ao processar otimização. Verifique as funções inseridas.';
-        this.isLoading = false;
       }
-    });
+      
+      this.isLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   logout(): void {
