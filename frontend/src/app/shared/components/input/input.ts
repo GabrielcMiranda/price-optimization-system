@@ -10,12 +10,12 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/f
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => Input),
+      useExisting: forwardRef(() => InputComponent),
       multi: true
     }
   ]
 })
-export class Input implements ControlValueAccessor {
+export class InputComponent implements ControlValueAccessor {
   @Input() label = '';
   @Input() type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' = 'text';
   @Input() placeholder = '';
