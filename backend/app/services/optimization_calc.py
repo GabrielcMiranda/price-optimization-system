@@ -12,14 +12,24 @@ class OptimizationCalc:
     
     @staticmethod
     def calculate_optimal_price(dto: OptimizationRequest) -> OptimizationInfo:
-      
+       
         x = sp.Symbol('x')
+        q = sp.Symbol('q') 
+        
         try:
-            cost = parse_expr(dto.cost_function, local_dict={'x': x})
-            demand = parse_expr(dto.demand_function, local_dict={'x': x})
+           
+            cost_expr = parse_expr(dto.cost_function, local_dict={'x': q})  # C(q)
+            demand = parse_expr(dto.demand_function, local_dict={'x': x})   # Q(p)
             
+            # C(Q(p))
+            cost = cost_expr.subs(q, demand)
+            
+            # Receita: R(p) = p · Q(p)
             revenue = x * demand
+            
+            # Lucro: L(p) = R(p) - C(Q(p))
             profit = revenue - cost
+            
             profit_derivative = sp.diff(profit, x)
             critical_points = sp.solve(profit_derivative, x)
             
