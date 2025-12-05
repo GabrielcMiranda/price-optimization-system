@@ -27,8 +27,8 @@ export class Login implements OnInit {
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      email: ['', [Validators.required]],
+      password: ['', [Validators.required]]
     });
   }
 
@@ -42,10 +42,7 @@ export class Login implements OnInit {
 
   getEmailError(): string {
     if (this.emailControl?.hasError('required')) {
-      return 'Email é obrigatório';
-    }
-    if (this.emailControl?.hasError('email')) {
-      return 'Email inválido';
+      return 'Email ou username é obrigatório';
     }
     return '';
   }
@@ -53,9 +50,6 @@ export class Login implements OnInit {
   getPasswordError(): string {
     if (this.passwordControl?.hasError('required')) {
       return 'Senha é obrigatória';
-    }
-    if (this.passwordControl?.hasError('minlength')) {
-      return 'Senha deve ter no mínimo 6 caracteres';
     }
     return '';
   }
@@ -72,7 +66,7 @@ export class Login implements OnInit {
     try {
       const { email, password } = this.loginForm.value;
       await this.authService.login({ login: email, password }).toPromise();
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/optimization']);
     } catch (error: any) {
       this.errorMessage = error?.error?.detail || 'Erro ao fazer login. Verifique suas credenciais.';
     } finally {

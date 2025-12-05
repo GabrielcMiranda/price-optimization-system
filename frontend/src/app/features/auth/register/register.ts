@@ -30,7 +30,7 @@ export class Register implements OnInit {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
@@ -86,9 +86,6 @@ export class Register implements OnInit {
     if (this.passwordControl?.hasError('required')) {
       return 'Senha é obrigatória';
     }
-    if (this.passwordControl?.hasError('minlength')) {
-      return 'Senha deve ter no mínimo 6 caracteres';
-    }
     return '';
   }
 
@@ -119,7 +116,7 @@ export class Register implements OnInit {
       this.successMessage = 'Conta criada com sucesso! Redirecionando...';
       
       setTimeout(() => {
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/optimization']);
       }, 2000);
     } catch (error: any) {
       this.errorMessage = error?.error?.detail || 'Erro ao criar conta. Tente novamente.';

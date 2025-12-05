@@ -14,7 +14,7 @@
     <!-- Register Card -->
     <app-card [elevated]="true">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Criar Conta</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Criar Conta</h2>
 
         @if (errorMessage) {
           <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -45,7 +45,7 @@
             label="Nome Completo"
             placeholder="Seu nome"
             formControlName="name"
-            [error]="nameControl?.touched ? getNameError() : ''"
+            [error]="nameControl?.touched && nameControl?.invalid ? getNameError() : ''"
             [required]="true"
           ></app-input>
 
@@ -55,7 +55,7 @@
             label="Email"
             placeholder="seu@email.com"
             formControlName="email"
-            [error]="emailControl?.touched ? getEmailError() : ''"
+            [error]="emailControl?.touched && emailControl?.invalid ? getEmailError() : ''"
             [required]="true"
           ></app-input>
 
@@ -65,8 +65,7 @@
             label="Senha"
             placeholder="••••••••"
             formControlName="password"
-            [error]="passwordControl?.touched ? getPasswordError() : ''"
-            hint="Mínimo de 6 caracteres"
+            [error]="passwordControl?.touched && passwordControl?.invalid ? getPasswordError() : ''"
             [required]="true"
           ></app-input>
 
@@ -76,16 +75,11 @@
             label="Confirmar Senha"
             placeholder="••••••••"
             formControlName="confirmPassword"
-            [error]="confirmPasswordControl?.touched ? getConfirmPasswordError() : ''"
+            [error]="confirmPasswordControl?.touched && confirmPasswordControl?.invalid ? getConfirmPasswordError() : ''"
             [required]="true"
           ></app-input>
 
-          <div class="text-xs text-gray-600">
-            Ao criar uma conta, você concorda com nossos
-            <a href="#" class="text-primary-600 hover:text-primary-700">Termos de Serviço</a>
-            e
-            <a href="#" class="text-primary-600 hover:text-primary-700">Política de Privacidade</a>
-          </div>
+          <div class="mt-2"></div>
 
           <app-button
             type="submit"
@@ -101,16 +95,11 @@
 
         <div class="mt-6 text-center text-sm text-gray-600">
           Já tem uma conta?
-          <a routerLink="/auth/login" class="text-primary-600 hover:text-primary-700 font-semibold ml-1">
+          <a routerLink="/login" class="text-primary-600 hover:text-primary-700 font-semibold ml-1">
             Entre aqui
           </a>
         </div>
       </div>
     </app-card>
-
-    <!-- Footer -->
-    <div class="text-center mt-8 text-sm text-gray-600">
-      <p>© 2025 PriceOptimizer. Todos os direitos reservados.</p>
-    </div>
   </div>
 </div>
