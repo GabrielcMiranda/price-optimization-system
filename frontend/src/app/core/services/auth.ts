@@ -35,6 +35,10 @@ export class AuthService {
     return localStorage.removeItem('access_token');
   }
 
+  logout() {
+    localStorage.removeItem(this.tokenKey);
+  }
+
   isTokenValid(): boolean {
     const token = this.getToken();
     

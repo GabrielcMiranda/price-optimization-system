@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { Button } from '../../../shared/components/button/button';
 import { InputComponent } from '../../../shared/components/input/input';
 import { Card } from '../../../shared/components/card/card';
@@ -23,7 +24,8 @@ export class Register implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -111,17 +113,23 @@ export class Register implements OnInit {
 
     try {
       const { name, email, password } = this.registerForm.value;
-      await this.authService.register({ username: name, email, password }).toPromise();
+      console.log('Tentando registrar:', email);
+      await firstValueFrom(this.authService.register({ username: name, email, password }));
+      console.log('Registro bem-sucedido');
       
       this.successMessage = 'Conta criada com sucesso! Redirecionando...';
+      this.isLoading = false;
+      this.cdr.detectChanges();
       
       setTimeout(() => {
         this.router.navigate(['/optimization']);
       }, 2000);
     } catch (error: any) {
+      console.error('Erro no registro:', error);
       this.errorMessage = error?.error?.detail || 'Erro ao criar conta. Tente novamente.';
-    } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
+      console.log('isLoading definido como false, errorMessage:', this.errorMessage);
     }
   }
 }
